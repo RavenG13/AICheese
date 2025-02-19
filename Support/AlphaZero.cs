@@ -94,7 +94,7 @@ public static class AlphaGo
 
     public static void EnvMakeForwardTensor(Env env, out Tensor Reshape_Input, out Tensor All_Reshape_Input)
     {
-        All_Reshape_Input = torch.zeros(new long[] { 1, 7, SIZE, SIZE });
+        All_Reshape_Input = torch.zeros(new long[] { 1, 6, SIZE, SIZE });
         Tensor input = env.ToTensor();
         Reshape_Input = input.reshape(new long[] { 2, SIZE, SIZE });
 
@@ -117,7 +117,7 @@ public static class AlphaGo
         All_Reshape_Input[0, 4, .., ..] = Last1_input[1, .., ..];
         All_Reshape_Input[0, 5, .., ..] = Last2_input[1, .., ..];
 
-        All_Reshape_Input[0, 6, .., ..] = env.Player;
+        //All_Reshape_Input[0, 6, .., ..] = env.Player;
     }
 
     public static (Tensor, Tensor) RotEnvTensor(Env env)
