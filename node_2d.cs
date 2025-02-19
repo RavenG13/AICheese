@@ -53,9 +53,9 @@ public partial class node_2d : Node2D
         Label = GetNode<Label>("Label");
 
 
-        AlphaGo.alphaAI = new ResNet("res", 6);
+        AlphaGo.alphaAI = new ResNet("res", 7);
         AlphaGo.alphaAI.to(CUDA);
-        AlphaGo.alphaAI = (ResNet)AlphaGo.alphaAI.load("./ModuleSave/New.dat");
+        //AlphaGo.alphaAI = (ResNet)AlphaGo.alphaAI.load("./ModuleSave/New.dat");
 
         AlphaGo.rollOutAI = new("test");
         AlphaGo.rollOutAI.to(CUDA);
@@ -134,7 +134,7 @@ public partial class node_2d : Node2D
         Learing = true;
         for (int i = 0; i < LearningTimes; i++)
         {
-            await Task.Run(() => AlphaGo.SelfPlay());
+            await Task.Run(() => AlphaGo.RolloutPlay());
 
             DebugText.Text += $"StudyTimes{i}\n";
         }

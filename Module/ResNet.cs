@@ -64,18 +64,21 @@ namespace Cheese.Module
             _Core = nn.Sequential(_core);
 
             var _value = new List<(string, Module<Tensor, Tensor>)>();
-            _value.Add(("ValueConv1", new ConvBlock("ValueConv1", 128, 1, 1)));
+            _value.Add(("ValueConv1", new ConvBlock("ValueConv1", 128, 2, 1)));
             _value.Add(("Flutten", nn.Flatten(1)));
-            _value.Add(("lin1", nn.Linear(81,128)));
+            _value.Add(("lin1", nn.Linear(162,128)));
             _value.Add(("relu", nn.ReLU()));
             _value.Add(("lin2", nn.Linear(128, 1)));
             _value.Add(("tanh", nn.Tanh()));
             _ValueHead = nn.Sequential(_value);
 
             var _policy = new List<(string, Module<Tensor, Tensor>)>();
-            _policy.Add(("ConvBlock", new ConvBlock("ConvBlock", 128, 2, 1)));
+            _policy.Add(("ConvBlock", new ConvBlock("ConvBlock", 128, 3, 1)));
             _policy.Add(("Flutten", nn.Flatten(1)));
-            _policy.Add(("Linear", nn.Linear(162, 81)));
+            _policy.Add(("Linear1", nn.Linear(3*81, 128)));
+            _policy.Add(("relu", nn.ReLU()));
+            _policy.Add(("Linear2", nn.Linear(128, 81)));
+            _policy.Add(("relu", nn.ReLU()));
             _policy.Add(("Out", nn.LogSoftmax(1)));
             _PolicyHead = nn.Sequential(_policy);
 
