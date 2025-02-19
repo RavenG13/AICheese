@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://mckxvwdp2k2u"]
+
+[ext_resource type="Script" path="res://training/train.cs" id="1_pujrw"]
+
+[node name="Node2D" type="Node2D"]
+script = ExtResource("1_pujrw")

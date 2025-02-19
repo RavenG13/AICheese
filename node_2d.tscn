@@ -1,0 +1,78 @@
+[gd_scene load_steps=2 format=3 uid="uid://db8ybdp073d2i"]
+
+[ext_resource type="Script" path="res://node_2d.cs" id="1_f5w81"]
+
+[node name="Node2D" type="Node2D"]
+script = ExtResource("1_f5w81")
+LearningTimes = 200
+
+[node name="GridContainer" type="GridContainer" parent="."]
+offset_right = 40.0
+offset_bottom = 40.0
+columns = 9
+
+[node name="Label" type="Label" parent="."]
+offset_left = 7.0
+offset_top = 816.0
+offset_right = 93.0
+offset_bottom = 903.0
+theme_override_font_sizes/font_size = 30
+
+[node name="BoxContainer" type="VBoxContainer" parent="."]
+offset_left = 1483.0
+offset_top = -4.0
+offset_right = 1595.0
+offset_bottom = 272.0
+alignment = 1
+
+[node name="Button" type="CheckButton" parent="BoxContainer"]
+layout_mode = 2
+button_pressed = true
+text = "更新"
+
+[node name="CheckButton" type="CheckButton" parent="BoxContainer"]
+layout_mode = 2
+text = "与AI对抗"
+
+[node name="刷新" type="Button" parent="BoxContainer"]
+layout_mode = 2
+text = "刷新
+"
+
+[node name="Button2" type="Button" parent="BoxContainer"]
+layout_mode = 2
+text = "展示棋盘"
+
+[node name="Button4" type="Button" parent="BoxContainer"]
+layout_mode = 2
+text = "学习
+"
+
+[node name="Button3" type="Button" parent="BoxContainer"]
+layout_mode = 2
+text = "评估
+"
+
+[node name="SpinBox" type="SpinBox" parent="BoxContainer"]
+layout_mode = 2
+max_value = 5000.0
+value = 3000.0
+
+[node name="Button5" type="Button" parent="BoxContainer"]
+layout_mode = 2
+text = "保存"
+
+[node name="DebugText" type="TextEdit" parent="."]
+offset_left = 1029.0
+offset_top = 451.0
+offset_right = 1596.0
+offset_bottom = 893.0
+editable = false
+
+[connection signal="pressed" from="BoxContainer/Button" to="." method="ShowText"]
+[connection signal="pressed" from="BoxContainer/CheckButton" to="." method="PlayerWithAI"]
+[connection signal="button_down" from="BoxContainer/刷新" to="." method="RefrashText"]
+[connection signal="button_down" from="BoxContainer/Button2" to="." method="ShowMap"]
+[connection signal="button_down" from="BoxContainer/Button4" to="." method="Study"]
+[connection signal="button_down" from="BoxContainer/Button3" to="." method="Evalation"]
+[connection signal="button_down" from="BoxContainer/Button5" to="." method="SaveModule"]

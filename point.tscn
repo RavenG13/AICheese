@@ -1,0 +1,21 @@
+[gd_scene load_steps=2 format=3 uid="uid://dgc42v6sfypfs"]
+
+[ext_resource type="Script" path="res://point.cs" id="1_k3o1t"]
+
+[node name="Control" type="ColorRect"]
+custom_minimum_size = Vector2(40, 40)
+mouse_filter = 2
+script = ExtResource("1_k3o1t")
+
+[node name="Label" type="Label" parent="."]
+z_as_relative = false
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+theme_override_colors/font_color = Color(0.562762, 0.658489, 0.999112, 1)
+theme_override_colors/font_outline_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[connection signal="gui_input" from="." to="." method="_on_gui_input"]
