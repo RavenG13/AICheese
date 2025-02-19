@@ -53,15 +53,14 @@ public partial class node_2d : Node2D
         Label = GetNode<Label>("Label");
 
 
-        AlphaGo.alphaAI = new ResNet("res", 7);
+        AlphaGo.alphaAI = new ResNet("res", 6);
         AlphaGo.alphaAI.to(CUDA);
+        AlphaGo.alphaAI = (ResNet)AlphaGo.alphaAI.load("./ModuleSave/New.dat");
 
         AlphaGo.rollOutAI = new("test");
         AlphaGo.rollOutAI.to(CUDA);
         AlphaGo.rollOutAI.load("./ModuleSave/ResrollOutAI.dat");
 
-        AlphaGo.alphaAI = (ResNet)AlphaGo.alphaAI.load("./ModuleSave/New.dat");
-        
         AlphaGo.alphaAI.optimizer = new(AlphaGo.alphaAI.parameters(), lr: 1E-4);
         AlphaGo.rollOutAI.adam = new(AlphaGo.rollOutAI.parameters(), lr: 5E-5);
 
