@@ -171,9 +171,9 @@ public partial class node_2d : Node2D
         {
             GameState g1 = env.ToGameState();
             GameState g2 = env.Parent.ToGameState();
-            for (int i = 0; i < g1.White.Length; i++)
+            for (int i = 0; i < g1.White().Length; i++)
             {
-                int w = g1.White[i] ^ g2.White[i];
+                int w = g1.White()[i] ^ g2.White()[i];
                 if (w != 0)
                 {
                     int Index = Size - (int)System.MathF.Log2(w) - 1;
@@ -182,7 +182,7 @@ public partial class node_2d : Node2D
 
                     break;
                 }
-                int B = g1.Black[i] ^ g2.Black[i];
+                int B = g1.Black()[i] ^ g2.Black()[i];
                 if (B != 0)
                 {
                     int Index = Size - (int)System.MathF.Log2(B) - 1;

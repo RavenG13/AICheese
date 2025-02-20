@@ -56,7 +56,7 @@ public class Node
 }
 public class MCTS
 {
-    static float _pbCBase = 1.0f;
+    static float _pbCBase = 1.1f;
 
     private nn.Module<Tensor, (Tensor, Tensor)> module;
 
@@ -284,7 +284,7 @@ public class PureRollOutMcts : RollOutMCTS
 
 public class RollOutMCTS : MCTS
 {
-    private readonly int _threads = 4;
+    private readonly int _threads = 8;
     protected readonly int RollOutTimes;
     private readonly nn.Module<Tensor, Tensor> RollAI;
     public RollOutMCTS(nn.Module<Tensor, Tensor> RollAI, int RollOutTimes = 400) : base(null)
@@ -343,11 +343,9 @@ public class RollOutMCTS : MCTS
             }
             Task<float>[] tasks = new Task<float>[_threads];
 
-            
-
-            for(int n = 0; n < _threads; n++)
+            for(int j = 0; j < _threads; j++)
             {
-                int id = n;
+                int id = j;
                 tasks[id] = Task.Run(() => RollOut(LeafNodes[id].node, LeafNodes[id].env));
             }
 
