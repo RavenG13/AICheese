@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
 using TorchSharp;
 using static TorchSharp.torch;
 
@@ -6,7 +8,7 @@ using static TorchSharp.torch;
 public class Node
 {
     public Node Parent { get; private set; }
-    //public int[] Act;
+    public float ThreadLoss { get; set; }
     public Node[,] Children;
     private int _visitCount;
     private double _valueSum;
@@ -29,6 +31,7 @@ public class Node
     {
         _visitCount++;
         _valueSum += value;
+        ThreadLoss = 0;
     }
 
     /// <summary>
@@ -144,6 +147,7 @@ public class MCTS
         {
             (int[] Act, Leaf) = SelectChild(Leaf);
             if (Act is null) break;
+            Leaf.ThreadLoss = -10;
             envCopy = envCopy.Step(Act);
         }
     }
@@ -157,13 +161,19 @@ public class MCTS
     public static float UcbScore(Node parent, Node Child)
     {
         double pbC = _pbCBase * Child.PriorP * Math.Sqrt(parent.VisitCount) / (Child.VisitCount + 1);
-        return (float)(pbC + Child.Value);
+        return (float)(pbC + Child.Value) - Child.ThreadLoss;
     }
+    /// <summary>
+    /// 通过UCB分数选择叶节点
+    /// </summary>
+    /// <param name="node"></param>
+    /// <returns></returns>
     public static (int[], Node) SelectChild(Node node)
     {
         float BestScore = -999;
         int[] action = null;
         Node Child = null;
+
         for (int i = 0; i < Global.SIZE; i++)
         {
             for (int j = 0; j < Global.SIZE; j++)
@@ -195,15 +205,16 @@ public class MCTS
             Simulate(root, env);
         }
 
-        torch.Tensor ActionProbs = torch.zeros(new long[] { Global.SIZE, Global.SIZE });
+        
+        float[,] ActionProbsArray = new float[Global.SIZE,Global.SIZE];
         for (int i = 0; i < Global.SIZE; i++)
         {
             for (int j = 0; j < Global.SIZE; j++)
             {
-                ActionProbs[i, j] = (float)root.Children[i, j].VisitCount / (float)root.VisitCount;
+                ActionProbsArray[i, j] = (float)root.Children[i, j].VisitCount / (float)root.VisitCount;
             }
         }
-
+        torch.Tensor ActionProbs = torch.tensor(ActionProbsArray);
         return ActionProbs.alias();
     }
 
@@ -273,15 +284,16 @@ public class PureRollOutMcts : RollOutMCTS
 
 public class RollOutMCTS : MCTS
 {
+    private readonly int _threads = 4;
     protected readonly int RollOutTimes;
     private readonly nn.Module<Tensor, Tensor> RollAI;
-    public RollOutMCTS(nn.Module<Tensor, Tensor> RollAI, int RollOutTimes = 800) : base(null)
+    public RollOutMCTS(nn.Module<Tensor, Tensor> RollAI, int RollOutTimes = 200) : base(null)
     {
         this.RollAI = RollAI;
         this.RollOutTimes = RollOutTimes;
     }
 
-    public void RoolOut(Node root, Env env)
+    public float RollOut(Node root, Env env)
     {
         Random random = new Random();
         Env env1 = env.Clone();
@@ -305,7 +317,7 @@ public class RollOutMCTS : MCTS
         }
         byte Winner = env1.IsEnd().Item2;
         float LeafValue = Winner == env.Player ? 1f : -1f;
-        root.UpdateRecursive(-LeafValue);
+        return -LeafValue;
     }
     protected override (Tensor Act, Tensor LeafValue) SelfForward(Tensor all_Reshape_Input)
     {
@@ -321,31 +333,45 @@ public class RollOutMCTS : MCTS
 
         for (int i = 0; i < RollOutTimes; i++)
         {
-            Node Leaf = root;
-            Env envCopy = env.Clone();
-            int[] Act = new int[] { -1, -1 };
-            SelectLeaf(ref Leaf, ref envCopy);
+            (Node node, Env env)[] LeafNodes = new (Node, Env)[4];
 
-            if (Leaf.VisitCount >= 20 && Leaf.IsLeaf() && envCopy.IsEnd().Item2 == 2)
+            for (int j = 0; j < _threads; j++)
             {
-                ExpandLeafNode(Leaf, envCopy);
-                continue;
+                LeafNodes[j].node = root;
+                LeafNodes[j].env = env.Clone();
+                SelectLeaf(ref LeafNodes[j].node, ref LeafNodes[j].env);
             }
-            if (Act[0] == -1)
+            Task<float>[] tasks = new Task<float>[4];
+
+            
+
+            for(int n = 0; n < _threads; n++)
             {
-                throw new Exception("Index Wrong");
+                int id = n;
+                tasks[id] = Task.Run(() => RollOut(LeafNodes[id].node, LeafNodes[id].env));
             }
-            RoolOut(Leaf, envCopy);
+
+            Task.WaitAll(tasks);
+
+            for (int j = 0; j < _threads; j++)
+            {
+                if (LeafNodes[j].node.VisitCount >= 20 && LeafNodes[j].node.IsLeaf() && LeafNodes[j].env.IsEnd().Item2 == 2)
+                {
+                    ExpandLeafNode(LeafNodes[j].node, LeafNodes[j].env);
+                }
+                LeafNodes[j].node.UpdateRecursive(-tasks[j].Result);
+            }
         }
-        torch.Tensor ActionProbs = torch.zeros(new long[] { Global.SIZE, Global.SIZE });
+
+        float[,] ActionProbsArray = new float[Global.SIZE, Global.SIZE];
         for (int i = 0; i < Global.SIZE; i++)
         {
             for (int j = 0; j < Global.SIZE; j++)
             {
-                ActionProbs[i, j] = (float)root.Children[i, j].VisitCount / (float)root.VisitCount;
+                ActionProbsArray[i, j] = (float)root.Children[i, j].VisitCount / (float)root.VisitCount;
             }
         }
-
+        Tensor ActionProbs = torch.tensor(ActionProbsArray);
         return ActionProbs.alias();
     }
 }
