@@ -10,7 +10,7 @@ public class Node
     public Node Parent { get; private set; }
     public float ThreadLoss { get; set; }
     public Node[,] Children;
-    private int _visitCount;
+    private int _visitCount { get; set; }
     private double _valueSum;
     public double PriorP
     {
@@ -161,7 +161,7 @@ public class MCTS
     public static float UcbScore(Node parent, Node Child)
     {
         double pbC = _pbCBase * Child.PriorP * Math.Sqrt(parent.VisitCount) / (Child.VisitCount + 1);
-        return (float)(pbC + Child.Value) - Child.ThreadLoss;
+        return (float)(pbC + Child.Value) + Child.ThreadLoss;
     }
     /// <summary>
     /// 通过UCB分数选择叶节点
@@ -275,7 +275,7 @@ public class PureRollOutMcts : RollOutMCTS
     }
     protected override (Tensor Act, Tensor LeafValue) SelfForward(Tensor all_Reshape_Input)
     {
-        return (torch.nn.functional.log_softmax(torch.rand(new long[] { 1, Global.SIZE }), 1), torch.zeros(1));
+        return (torch.nn.functional.log_softmax(torch.rand(new long[] { 1, Global.SIZE * Global.SIZE }), 1), torch.zeros(1));
     }
 
 
@@ -287,7 +287,7 @@ public class RollOutMCTS : MCTS
     private readonly int _threads = 4;
     protected readonly int RollOutTimes;
     private readonly nn.Module<Tensor, Tensor> RollAI;
-    public RollOutMCTS(nn.Module<Tensor, Tensor> RollAI, int RollOutTimes = 200) : base(null)
+    public RollOutMCTS(nn.Module<Tensor, Tensor> RollAI, int RollOutTimes = 400) : base(null)
     {
         this.RollAI = RollAI;
         this.RollOutTimes = RollOutTimes;
@@ -333,7 +333,7 @@ public class RollOutMCTS : MCTS
 
         for (int i = 0; i < RollOutTimes; i++)
         {
-            (Node node, Env env)[] LeafNodes = new (Node, Env)[4];
+            (Node node, Env env)[] LeafNodes = new (Node, Env)[_threads];
 
             for (int j = 0; j < _threads; j++)
             {
@@ -341,7 +341,7 @@ public class RollOutMCTS : MCTS
                 LeafNodes[j].env = env.Clone();
                 SelectLeaf(ref LeafNodes[j].node, ref LeafNodes[j].env);
             }
-            Task<float>[] tasks = new Task<float>[4];
+            Task<float>[] tasks = new Task<float>[_threads];
 
             
 
@@ -359,7 +359,7 @@ public class RollOutMCTS : MCTS
                 {
                     ExpandLeafNode(LeafNodes[j].node, LeafNodes[j].env);
                 }
-                LeafNodes[j].node.UpdateRecursive(-tasks[j].Result);
+                LeafNodes[j].node.UpdateRecursive(tasks[j].Result);
             }
         }
 
@@ -371,7 +371,7 @@ public class RollOutMCTS : MCTS
                 ActionProbsArray[i, j] = (float)root.Children[i, j].VisitCount / (float)root.VisitCount;
             }
         }
-        Tensor ActionProbs = torch.tensor(ActionProbsArray);
-        return ActionProbs.alias();
+
+        return torch.tensor(ActionProbsArray);
     }
 }

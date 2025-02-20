@@ -1,4 +1,3 @@
-using Cheese.Module;
 using Godot;
 using System.Collections.Concurrent;
 using System.Linq;
@@ -64,31 +63,31 @@ public partial class node_2d : Node2D
         //AlphaGo.rollOutAI.load("./ModuleSave/15ResrollOutAI.dat");
 
         //AlphaGo.alphaAI.optimizer = new(AlphaGo.alphaAI.parameters(), lr: 1E-4);
-        AlphaGo.rollOutAI.adam = new(AlphaGo.rollOutAI.parameters(), lr: 1E-5);
+        AlphaGo.rollOutAI.adam = new(AlphaGo.rollOutAI.parameters(), lr: 1E-4);
 
-        //Test();
+        Test();
 
     }
     public void Test()
     {
         Env env = new Env();
         env = env.Step(new int[] { 1, 2 });
-        //env = env.Step(new int[] { 3, 5 });
-        //env = env.Step(new int[] { 1, 3 });
-        //env = env.Step(new int[] { 5, 8 });
-        //env = env.Step(new int[] { 1, 1 });
-        //env = env.Step(new int[] { 4, 8 });
-        //env = env.Step(new int[] { 1, 0 });
-        //env = env.Step(new int[] { 1, 8 });
-        /*
-        MCTS mCTS = new MCTS(AlphaGo.alphaAI);
+        env = env.Step(new int[] { 3, 5 });
+        env = env.Step(new int[] { 1, 3 });
+        env = env.Step(new int[] { 5, 8 });
+        env = env.Step(new int[] { 1, 1 });
+        env = env.Step(new int[] { 4, 8 });
+        env = env.Step(new int[] { 1, 0 });
+        env = env.Step(new int[] { 1, 8 });
 
-        Tensor ActProbs = mCTS.GetNextAction(env, new Node());
+        RollOutMCTS mCTS = new RollOutMCTS(AlphaGo.rollOutAI);
+
+        Tensor ActProbs = mCTS.GetNextAction(env);
         using Tensor Where = argwhere(ActProbs == ActProbs.max()).type(ScalarType.Int32);
 
         int[] act = Where[TensorIndex.Tensor(torch.randperm(Where.size(0))[0])].data<int>().ToArray();
         env = env.Step(act);
-        */
+        
         Global.Env = env;
     }
     public async void Evalation()
