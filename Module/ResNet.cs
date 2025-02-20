@@ -99,7 +99,7 @@ namespace Cheese.Module
         public ResRollOutAI(string name) : base(name)
         {
             var core = new List<(string, Module<Tensor, Tensor>)>();
-            core.Add(("Conv2D1", Conv2d(7, 64, 3, 1)));
+            core.Add(("Conv2D1", Conv2d(7, 64, 3, padding:1)));
             core.Add(("Relu", ReLU()));
             core.Add(("Res1", new ResBlock("Res1", 64, 64)));
             core.Add(("Res2", new ResBlock("Res2", 64, 64)));
@@ -107,9 +107,9 @@ namespace Cheese.Module
             core.Add(("Filter", Conv2d(64, 4, 1)));
             core.Add(("Relu", ReLU()));
             core.Add(("Fletten", Flatten()));
-            core.Add(("Linear1", Linear(196, 162)));
+            core.Add(("Linear1", Linear(4* Global.SIZE * Global.SIZE, 512)));
             core.Add(("Relu", ReLU()));
-            core.Add(("Linear2", Linear(162, 81)));
+            core.Add(("Linear2", Linear(512, Global.SIZE * Global.SIZE)));
             core.Add(("out", LogSoftmax(1)));
 
             _Core = nn.Sequential(core);

@@ -55,16 +55,16 @@ public partial class node_2d : Node2D
         Label = GetNode<Label>("Label");
 
 
-        AlphaGo.alphaAI = new ResNet("res",Global.SIZE, 7);
-        AlphaGo.alphaAI.to(CUDA);
-        AlphaGo.alphaAI = (ResNet)AlphaGo.alphaAI.load("./ModuleSave/New.dat");
+        //AlphaGo.alphaAI = new ResNet("res",Global.SIZE, 7);
+        //AlphaGo.alphaAI.to(CUDA);
+        //AlphaGo.alphaAI = (ResNet)AlphaGo.alphaAI.load("./ModuleSave/New.dat");
 
         AlphaGo.rollOutAI = new("test");
         AlphaGo.rollOutAI.to(CUDA);
-        AlphaGo.rollOutAI.load("./ModuleSave/ResrollOutAI.dat");
+        AlphaGo.rollOutAI.load("./ModuleSave/15ResrollOutAI.dat");
 
-        AlphaGo.alphaAI.optimizer = new(AlphaGo.alphaAI.parameters(), lr: 1E-4);
-        AlphaGo.rollOutAI.adam = new(AlphaGo.rollOutAI.parameters(), lr: 8E-5);
+        //AlphaGo.alphaAI.optimizer = new(AlphaGo.alphaAI.parameters(), lr: 1E-4);
+        AlphaGo.rollOutAI.adam = new(AlphaGo.rollOutAI.parameters(), lr: 1E-5);
 
         //Test();
 
@@ -119,8 +119,8 @@ public partial class node_2d : Node2D
 
     public void SaveModule()
     {
-        AlphaGo.alphaAI.save("./ModuleSave/New.dat");
-        AlphaGo.rollOutAI.save("./ModuleSave/ResrollOutAI.dat");
+        //AlphaGo.alphaAI.save("./ModuleSave/New.dat");
+        AlphaGo.rollOutAI.save("./ModuleSave/15ResrollOutAI.dat");
         Global.strings.Enqueue("Save");
     }
     public void ShowText()
@@ -138,7 +138,7 @@ public partial class node_2d : Node2D
         Learing = true;
         for (int i = 0; i < LearningTimes; i++)
         {
-            await Task.Run(() => AlphaGo.SelfPlay());
+            await Task.Run(() => AlphaGo.RolloutPlay());
 
             DebugText.Text += $"StudyTimes{i}\n";
         }
@@ -278,10 +278,9 @@ public static class Global
     public static ConcurrentQueue<string> strings = new();
     public static Env Env;
     public static string Loss;
-    public const int SIZE = 9;
+    public const int SIZE = 15;
 }
 /*
-
     public void ReConnect()
     {
 

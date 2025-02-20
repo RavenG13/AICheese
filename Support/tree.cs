@@ -180,13 +180,10 @@ public class MCTS
         AlphaGo.alphaAI.eval();
 
         torch.set_grad_enabled(false);
-
         const int NumSimulations = 400;
-
         int[] action = new int[2];
 
         if (root.Children is null) ExpandLeafNode(root, env);
-
         for (int i = root.VisitCount; i < NumSimulations; i++)
         {
             Simulate(root, env);
