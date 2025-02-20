@@ -125,12 +125,7 @@ public class MCTS
         Node root = node;
         Node Leaf = node;
         Env envCopy = env.Clone();
-        while (!Leaf.IsLeaf())
-        {
-            (int[] Act, Leaf) = SelectChild(Leaf);
-            if (Act is null) break;
-            envCopy = envCopy.Step(Act);
-        }
+        SelectLeaf(ref Leaf, ref envCopy);
         (int[] pos, byte Winner) = envCopy.IsEnd();
         bool IsDone = Winner != 2;
         float LeafValue;
@@ -142,6 +137,17 @@ public class MCTS
         }
         Leaf.UpdateRecursive(-LeafValue);
     }
+
+    protected static void SelectLeaf(ref Node Leaf, ref Env envCopy)
+    {
+        while (!Leaf.IsLeaf())
+        {
+            (int[] Act, Leaf) = SelectChild(Leaf);
+            if (Act is null) break;
+            envCopy = envCopy.Step(Act);
+        }
+    }
+
     /// <summary>
     /// 计算子节点的UCB值
     /// </summary>
@@ -279,6 +285,7 @@ public class RollOutMCTS : MCTS
     {
         Random random = new Random();
         Env env1 = env.Clone();
+
         for (int i = 0; i < Global.SIZE * Global.SIZE; i++)
         {
             if (env1.IsEnd().Item2 != 2)
@@ -317,12 +324,7 @@ public class RollOutMCTS : MCTS
             Node Leaf = root;
             Env envCopy = env.Clone();
             int[] Act = new int[] { -1, -1 };
-            while (!Leaf.IsLeaf())
-            {
-                (Act, Leaf) = SelectChild(Leaf);
-                if (Act is null) break;
-                envCopy = envCopy.Step(Act);
-            }
+            SelectLeaf(ref Leaf, ref envCopy);
 
             if (Leaf.VisitCount >= 20 && Leaf.IsLeaf() && envCopy.IsEnd().Item2 == 2)
             {
