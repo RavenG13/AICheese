@@ -54,7 +54,7 @@ namespace Cheese.Module
         Module<Tensor, Tensor> _ValueHead;
         Module<Tensor, Tensor> _PolicyHead;
         public Adam optimizer;
-        public ResNet(string name,int in_channel) : base(name)
+        public ResNet(string name,int MatchSize,int in_channel) : base(name)
         {
             var _core = new List<(string,Module<Tensor,Tensor>)>();
             _core.Add(("InConv", new ConvBlock("Conv1", in_channel, 128, 3, 1)));
@@ -75,9 +75,9 @@ namespace Cheese.Module
             var _policy = new List<(string, Module<Tensor, Tensor>)>();
             _policy.Add(("ConvBlock", new ConvBlock("ConvBlock", 128, 3, 1)));
             _policy.Add(("Flutten", nn.Flatten(1)));
-            _policy.Add(("Linear1", nn.Linear(3*81, 128)));
+            _policy.Add(("Linear1", nn.Linear(3 * MatchSize * MatchSize, 128)));
             _policy.Add(("relu", nn.ReLU()));
-            _policy.Add(("Linear2", nn.Linear(128, 81)));
+            _policy.Add(("Linear2", nn.Linear(128, MatchSize * MatchSize)));
             _policy.Add(("relu", nn.ReLU()));
             _policy.Add(("Out", nn.LogSoftmax(1)));
             _PolicyHead = nn.Sequential(_policy);

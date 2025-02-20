@@ -11,68 +11,13 @@ using static TorchSharp.torch;
 using static TorchSharp.torch.nn;
 using static TorchSharp.torch.optim;
 
-public class AlphaAI : Module<Tensor, (Tensor, Tensor)>
-{
-    private Module<Tensor, Tensor> _core;
-    private Module<Tensor, Tensor> action;
-    private Module<Tensor, Tensor> value;
-
-    //scheduler = lr_scheduler.ExponentialLR(optimizer, gamma=0.95);
-    public Adam optimizer;
-    public optim.lr_scheduler.LRScheduler _StepLR;
-    public AlphaAI() : base("AlphaAI")
-    {
-        var Core = new List<(string, Module<Tensor, Tensor>)>();
-        var Action = new List<(string, Module<Tensor, Tensor>)>();
-        var Value = new List<(string, Module<Tensor, Tensor>)>();
-
-        Core.Add(("Conv2d_1", nn.Conv2d(7, 32, kernel_size: 3, padding: 1)));
-        Core.Add(("Relu_Core_1", nn.LeakyReLU()));
-        Core.Add(("Conv2d_2", nn.Conv2d(32, 64, kernel_size: 3, padding: 1)));
-        Core.Add(("Relu_Core_2", nn.LeakyReLU()));
-        Core.Add(("Conv2d_3", nn.Conv2d(64, 128, kernel_size: 3, padding: 1)));
-        Core.Add(("Relu_Core_3", nn.LeakyReLU()));
-        Core.Add(("Conv2d_4", nn.Conv2d(128, 196, kernel_size: 3, padding: 1)));
-        Core.Add(("Relu_Core_4", nn.LeakyReLU()));
-
-        Action.Add(("Conv2d_4", nn.Conv2d(196, 4, kernel_size: 1)));
-        Action.Add(("Flatten", nn.Flatten()));
-        Action.Add(("LinearVII", nn.Linear(324, 81)));
-        Action.Add(("softmax", nn.LogSoftmax(1)));
-        
-
-        Value.Add(("Conv2d_4", nn.Conv2d(196, 2, kernel_size: 1)));
-        Value.Add(("Flatten", nn.Flatten()));
-        Value.Add(("LinearValue1", nn.Linear(162, 64)));
-        Value.Add(("Relu", nn.LeakyReLU()));
-        Value.Add(("LinearValue2", nn.Linear(64, 1)));
-        Value.Add(("tanh", nn.Tanh()));
-
-        _core = Sequential(Core);
-        action = Sequential(Action);
-        value = Sequential(Value);
-
-        RegisterComponents();
-
-        if (torch.cuda.is_available()) this.to("cuda");
-    }
-
-    public override (Tensor, Tensor) forward(Tensor input)
-    {
-        using var core_output = _core.forward(input.cuda());
-        using var action_output = action.forward(core_output);
-        using var value_output = value.forward(core_output);
-
-        return (action_output.cpu(), value_output.cpu());
-    }
-}
 public static class AlphaGo
 {
     public static ResRollOutAI rollOutAI { get; set; }
 
     private static DataLoader dataloader { get; set; } = new DataLoader();
     public static ResNet alphaAI { get; set; }
-    public const int SIZE = 9;
+    public const int SIZE = Global.SIZE;
     public static Adam optimizer;
     
     public static (Tensor, Tensor) PolicyForward(Env env)
@@ -163,11 +108,11 @@ public static class AlphaGo
         Env env = new Env();
         
 
-        for (int i = 0; i < 81; i++)
+        for (int i = 0; i < SIZE*SIZE; i++)
         {
             if (env.IsEnd().Item2 != 2) break;
 
-            OutPutText.strings.Enqueue(n.ToString() + " ");
+            Global.strings.Enqueue(n.ToString() + " ");
             n++;
 
             Node node = new();
@@ -178,15 +123,15 @@ public static class AlphaGo
             using Tensor Where = argwhere(ActProbs == ActProbs.max()).type(ScalarType.Int32);
 
             int[] act = Where[TensorIndex.Tensor(torch.randperm(Where.size(0))[0])].data<int>().ToArray();
-            OutPutText.strings.Enqueue(act.Join() + "\n");
+            Global.strings.Enqueue(act.Join() + "\n");
 
             env = env.Step(act);
             
         }
-        OutPutText.strings.Enqueue("\n\nfinish\n");
-        OutPutText.strings.Enqueue(env.IsEnd().Item1.Join());
-        OutPutText.strings.Enqueue("\nWinner=" + env.IsEnd().Item2.ToString());
-        OutPutText.Env = env.Clone();
+        Global.strings.Enqueue("\n\nfinish\n");
+        Global.strings.Enqueue(env.IsEnd().Item1.Join());
+        Global.strings.Enqueue("\nWinner=" + env.IsEnd().Item2.ToString());
+        Global.Env = env.Clone();
 
         //env.TensorToLearn = env.Parent.TensorToLearn.clone();
 
@@ -199,11 +144,11 @@ public static class AlphaGo
         int n = 0;
         Env env = new Env();
 
-        for (int i = 0; i < 81; i++)
+        for (int i = 0; i < SIZE * SIZE; i++)
         {
             if (env.IsEnd().Item2 != 2) break;
 
-            OutPutText.strings.Enqueue(n.ToString() + " ");
+            Global.strings.Enqueue(n.ToString() + " ");
             n++;
             AlphaGo.rollOutAI.eval();
             RollOutMCTS mCTS = new(AlphaGo.rollOutAI);
@@ -213,19 +158,19 @@ public static class AlphaGo
             using Tensor Where = argwhere(ActProbs == ActProbs.max()).type(ScalarType.Int32);
 
             int[] act = Where[TensorIndex.Tensor(torch.randperm(Where.size(0))[0])].data<int>().ToArray();
-            OutPutText.strings.Enqueue(act.Join() + "\n");
+            Global.strings.Enqueue(act.Join() + "\n");
 
             env = env.Step(act);
         }
 
-        OutPutText.strings.Enqueue("\n\nfinish\n");
-        OutPutText.strings.Enqueue(env.IsEnd().Item1.Join());
-        OutPutText.strings.Enqueue("\nWinner=" + env.IsEnd().Item2.ToString());
-        OutPutText.Env = env.Clone();
+        Global.strings.Enqueue("\n\nfinish\n");
+        Global.strings.Enqueue(env.IsEnd().Item1.Join());
+        Global.strings.Enqueue("\nWinner=" + env.IsEnd().Item2.ToString());
+        Global.Env = env.Clone();
 
         
         DataLoader.RollTrain(env);
-        DataLoader.Train(env);
+        //DataLoader.Train(env);
         GC.Collect();
     }
 }
@@ -287,9 +232,9 @@ public class DataLoader
             newenv = newenv.Parent;
         }
 
-        OutPutText.Loss = (Loss1List.Sum() / Loss1List.LongCount()).ToString();
+        Global.Loss = (Loss1List.Sum() / Loss1List.LongCount()).ToString();
 
-        OutPutText.Loss += "\n" + (-entropy / Loss1List.LongCount()).ToString();
+        Global.Loss += "\n" + (-entropy / Loss1List.LongCount()).ToString();
 
     }
 
@@ -338,9 +283,9 @@ public class DataLoader
             newenv = newenv.Parent;
         }
 
-        OutPutText.Loss = (Loss1List.Sum() / Loss1List.LongCount()).ToString() + " + " + (Loss2List.Sum() / Loss2List.Count()).ToString();
+        Global.Loss = (Loss1List.Sum() / Loss1List.LongCount()).ToString() + " + " + (Loss2List.Sum() / Loss2List.Count()).ToString();
 
-        OutPutText.Loss += "\n" + (-entropy / Loss1List.LongCount()).ToString();
+        Global.Loss += "\n" + (-entropy / Loss1List.LongCount()).ToString();
         
     }
 }

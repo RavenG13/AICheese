@@ -10,6 +10,7 @@ using static TorchSharp.torch;
 
 public partial class node_2d : Node2D
 {
+    private readonly int Size = Global.SIZE;
     GridContainer gridContainer;
     Label Label;
 
@@ -29,13 +30,14 @@ public partial class node_2d : Node2D
     {
 
         DebugText = GetNode<TextEdit>("DebugText");
-        OutPutText.textEdit = DebugText;
+        Global.textEdit = DebugText;
 
 
         gridContainer = GetNode<GridContainer>("GridContainer");
+        gridContainer.Columns = Size;
         PackedScene packedScene = GD.Load<PackedScene>("res://point.tscn");
         spinBox = GetNode<SpinBox>("/root/Node2D/BoxContainer/SpinBox");
-        points = new point[9, 9];
+        points = new point[Size, Size];
 
         for (int i = 0; i < points.GetLength(0); i++)
         {
@@ -53,16 +55,16 @@ public partial class node_2d : Node2D
         Label = GetNode<Label>("Label");
 
 
-        AlphaGo.alphaAI = new ResNet("res", 7);
+        AlphaGo.alphaAI = new ResNet("res",Global.SIZE, 7);
         AlphaGo.alphaAI.to(CUDA);
-        //AlphaGo.alphaAI = (ResNet)AlphaGo.alphaAI.load("./ModuleSave/New.dat");
+        AlphaGo.alphaAI = (ResNet)AlphaGo.alphaAI.load("./ModuleSave/New.dat");
 
         AlphaGo.rollOutAI = new("test");
         AlphaGo.rollOutAI.to(CUDA);
         AlphaGo.rollOutAI.load("./ModuleSave/ResrollOutAI.dat");
 
         AlphaGo.alphaAI.optimizer = new(AlphaGo.alphaAI.parameters(), lr: 1E-4);
-        AlphaGo.rollOutAI.adam = new(AlphaGo.rollOutAI.parameters(), lr: 5E-5);
+        AlphaGo.rollOutAI.adam = new(AlphaGo.rollOutAI.parameters(), lr: 8E-5);
 
         //Test();
 
@@ -71,13 +73,14 @@ public partial class node_2d : Node2D
     {
         Env env = new Env();
         env = env.Step(new int[] { 1, 2 });
-        env = env.Step(new int[] { 3, 5 });
-        env = env.Step(new int[] { 1, 3 });
-        env = env.Step(new int[] { 5, 8 });
-        env = env.Step(new int[] { 1, 1 });
-        env = env.Step(new int[] { 4, 8 });
-        env = env.Step(new int[] { 1, 0 });
+        //env = env.Step(new int[] { 3, 5 });
+        //env = env.Step(new int[] { 1, 3 });
+        //env = env.Step(new int[] { 5, 8 });
+        //env = env.Step(new int[] { 1, 1 });
+        //env = env.Step(new int[] { 4, 8 });
+        //env = env.Step(new int[] { 1, 0 });
         //env = env.Step(new int[] { 1, 8 });
+        /*
         MCTS mCTS = new MCTS(AlphaGo.alphaAI);
 
         Tensor ActProbs = mCTS.GetNextAction(env, new Node());
@@ -85,7 +88,8 @@ public partial class node_2d : Node2D
 
         int[] act = Where[TensorIndex.Tensor(torch.randperm(Where.size(0))[0])].data<int>().ToArray();
         env = env.Step(act);
-        OutPutText.Env = env;
+        */
+        Global.Env = env;
     }
     public async void Evalation()
     {
@@ -94,7 +98,7 @@ public partial class node_2d : Node2D
             Env env = new Env();
             PureRollOutMcts pureRollOutMcts = new PureRollOutMcts();
             RollOutMCTS rollOut = new RollOutMCTS(AlphaGo.rollOutAI);
-            for (int i = 0; i < 81; i++)
+            for (int i = 0; i < Size * Size; i++)
             {
                 Tensor next;
                 if (i % 2 == 0) { next = pureRollOutMcts.GetNextAction(env); }
@@ -103,13 +107,13 @@ public partial class node_2d : Node2D
                 using Tensor Where = argwhere(next == next.max()).type(ScalarType.Int32);
 
                 int[] act = Where[TensorIndex.Tensor(torch.randperm(Where.size(0))[0])].data<int>().ToArray();
-                OutPutText.strings.Enqueue(act.Join() + "\n");
+                Global.strings.Enqueue(act.Join() + "\n");
 
                 env = env.Step(act);
                 if (env.IsEnd().Item2 != 2) { break; }
             }
-            OutPutText.Env = env;
-            OutPutText.strings.Enqueue("Winner=" + env.IsEnd().Item2);
+            Global.Env = env;
+            Global.strings.Enqueue("Winner=" + env.IsEnd().Item2);
         });
     }
 
@@ -117,7 +121,7 @@ public partial class node_2d : Node2D
     {
         AlphaGo.alphaAI.save("./ModuleSave/New.dat");
         AlphaGo.rollOutAI.save("./ModuleSave/ResrollOutAI.dat");
-        OutPutText.strings.Enqueue("Save");
+        Global.strings.Enqueue("Save");
     }
     public void ShowText()
     {
@@ -126,7 +130,7 @@ public partial class node_2d : Node2D
     public void RefrashText()
     {
         DebugText.Text = "";
-        OutPutText.strings.Clear();
+        Global.strings.Clear();
     }
     public async void Study()
     {
@@ -134,7 +138,7 @@ public partial class node_2d : Node2D
         Learing = true;
         for (int i = 0; i < LearningTimes; i++)
         {
-            await Task.Run(() => AlphaGo.RolloutPlay());
+            await Task.Run(() => AlphaGo.SelfPlay());
 
             DebugText.Text += $"StudyTimes{i}\n";
         }
@@ -146,16 +150,16 @@ public partial class node_2d : Node2D
 
     public void ShowMap()
     {
-        for (int i = 0; i < 9; i++)
+        for (int i = 0; i < Size; i++)
         {
-            for (int j = 0; j < 9; j++)
+            for (int j = 0; j < Size; j++)
             {
                 points[i, j].Color = Godot.Color.Color8(0, 250, 0);
                 points[i, j].GetNode<Label>("Label").Text = "";
             }
         }
-        Env root = OutPutText.Env;
-        Env End = OutPutText.Env;
+        Env root = Global.Env;
+        Env End = Global.Env;
         int Length = 0;
         if (root is null) { return; }
         while (root.Parent != null)
@@ -173,7 +177,7 @@ public partial class node_2d : Node2D
                 int w = g1.White[i] ^ g2.White[i];
                 if (w != 0)
                 {
-                    int Index = 8 - (int)System.MathF.Log2(w);
+                    int Index = Size - (int)System.MathF.Log2(w) - 1;
                     points[i, Index].Color = new Color(255, 255, 255);
                     points[i, Index].GetNode<Label>("Label").Text = Length.ToString() + "\n";
 
@@ -182,7 +186,7 @@ public partial class node_2d : Node2D
                 int B = g1.Black[i] ^ g2.Black[i];
                 if (B != 0)
                 {
-                    int Index = 8 - (int)System.MathF.Log2(B);
+                    int Index = Size - (int)System.MathF.Log2(B) - 1;
                     points[i, Index].Color = new Color(0, 0, 0);
                     points[i, Index].GetNode<Label>("Label").Text = Length.ToString() + "\n";
 
@@ -200,7 +204,7 @@ public partial class node_2d : Node2D
 
 
         HunmanVSAiEnv = new();
-        OutPutText.Env = HunmanVSAiEnv;
+        Global.Env = HunmanVSAiEnv;
         ShowMap();
 
 
@@ -227,7 +231,7 @@ public partial class node_2d : Node2D
             }
         }
 
-        OutPutText.strings.Enqueue(position[0].ToString());
+        Global.strings.Enqueue(position[0].ToString());
         HunmanVSAiEnv = HunmanVSAiEnv.Step(position);
 
         RollOutMCTS rollOutMCTS = new(AlphaGo.rollOutAI, 3200);
@@ -235,20 +239,20 @@ public partial class node_2d : Node2D
         using Tensor Where = argwhere(next == next.max()).type(ScalarType.Int32);
 
         int[] act = Where[TensorIndex.Tensor(torch.randperm(Where.size(0))[0])].data<int>().ToArray();
-        OutPutText.strings.Enqueue(act.Join() + "\n");
+        Global.strings.Enqueue(act.Join() + "\n");
 
         HunmanVSAiEnv = HunmanVSAiEnv.Step(act);
         points[act[0], act[1]].MouseFilter = MouseFilterEnum.Ignore;
         if (HunmanVSAiEnv.IsEnd().Item2 != 2)
         {
-            OutPutText.strings.Enqueue("Winner=" + HunmanVSAiEnv.IsEnd().Item2);
+            Global.strings.Enqueue("Winner=" + HunmanVSAiEnv.IsEnd().Item2);
             foreach (var i in points)
             {
                 i.MouseFilter = Control.MouseFilterEnum.Ignore;
             }
         }
 
-        OutPutText.Env = HunmanVSAiEnv.Clone();
+        Global.Env = HunmanVSAiEnv.Clone();
         ShowMap();
 
     }
@@ -257,24 +261,24 @@ public partial class node_2d : Node2D
     {
         if (showText)
         {
-            if (OutPutText.strings.TryDequeue(out string str))
+            if (Global.strings.TryDequeue(out string str))
             {
                 DebugText.Text += str;
                 if (DebugText.Text.Length > 3000) { DebugText.Text = str; }
             }
         }
-        Label.Text = OutPutText.Loss;
+        Label.Text = Global.Loss;
         LearningTimes = (int)spinBox.Value;
     }
 }
 
-public static class OutPutText
+public static class Global
 {
     public static TextEdit textEdit;
     public static ConcurrentQueue<string> strings = new();
     public static Env Env;
     public static string Loss;
-
+    public const int SIZE = 9;
 }
 /*
 

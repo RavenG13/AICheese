@@ -86,12 +86,12 @@ public class MCTS
         if (env.IsEnd().Item2 != 2) return LeafValue;
 
         MakeRandom(env, ActionProbsArray);
-        node.Children = new Node[9, 9];
-        for (int i = 0; i < 9; i++)
+        node.Children = new Node[Global.SIZE, Global.SIZE];
+        for (int i = 0; i < Global.SIZE; i++)
         {
-            for (int j = 0; j < 9; j++)
+            for (int j = 0; j < Global.SIZE; j++)
             {
-                node.Children[i, j] = new Node(node, ActionProbsArray[i * 9 + j]);
+                node.Children[i, j] = new Node(node, ActionProbsArray[i * Global.SIZE + j]);
             }
         }
         return LeafValue;
@@ -104,13 +104,13 @@ public class MCTS
     {
         Random random = new Random();
         (int[], double) Score = (new int[] { 0, 0 }, -1);
-        for (int i = 0; i < 9; i++)
+        for (int i = 0; i < Global.SIZE; i++)
         {
-            for (int j = 0; j < 9; j++)
+            for (int j = 0; j < Global.SIZE; j++)
             {
                 if (env.ToGameState().HasPiece(i, j))
                 {
-                    ActionProbsArray[i * 9 + j] = -10;
+                    ActionProbsArray[i * Global.SIZE + j] = -10;
                     continue;
                 }
                 double value = random.NextDouble();
@@ -118,7 +118,7 @@ public class MCTS
             }
         }
 
-        ActionProbsArray[9 * Score.Item1[0] + Score.Item1[1]] += 0.3f;
+        ActionProbsArray[Global.SIZE * Score.Item1[0] + Score.Item1[1]] += 0.3f;
     }
     public void Simulate(Node node, Env env)
     {
@@ -158,9 +158,9 @@ public class MCTS
         float BestScore = -999;
         int[] action = null;
         Node Child = null;
-        for (int i = 0; i < 9; i++)
+        for (int i = 0; i < Global.SIZE; i++)
         {
-            for (int j = 0; j < 9; j++)
+            for (int j = 0; j < Global.SIZE; j++)
             {
                 float Ucb = UcbScore(node, node.Children[i, j]);
                 if (Ucb > BestScore)
@@ -192,10 +192,10 @@ public class MCTS
             Simulate(root, env);
         }
 
-        torch.Tensor ActionProbs = torch.zeros(new long[] { 9, 9 });
-        for (int i = 0; i < 9; i++)
+        torch.Tensor ActionProbs = torch.zeros(new long[] { Global.SIZE, Global.SIZE });
+        for (int i = 0; i < Global.SIZE; i++)
         {
-            for (int j = 0; j < 9; j++)
+            for (int j = 0; j < Global.SIZE; j++)
             {
                 ActionProbs[i, j] = (float)root.Children[i, j].VisitCount / (float)root.VisitCount;
             }
@@ -209,7 +209,7 @@ public class Env
 {
     public Env Parent { get; private set; }
     public Tensor TensorToLearn;
-    GameState gameState;
+    private GameState gameState;
     public int Player { get; private set; }
     public Env() { gameState = new GameState(); Player = 0; }
     public Env(GameState gameState, int player, Env parent) { this.gameState = gameState; Player = player; Parent = parent; }
@@ -261,7 +261,7 @@ public class PureRollOutMcts : RollOutMCTS
     }
     protected override (Tensor Act, Tensor LeafValue) SelfForward(Tensor all_Reshape_Input)
     {
-        return (torch.nn.functional.log_softmax(torch.rand(new long[] { 1, 81 }), 1), torch.zeros(1));
+        return (torch.nn.functional.log_softmax(torch.rand(new long[] { 1, Global.SIZE }), 1), torch.zeros(1));
     }
 
 
@@ -272,7 +272,7 @@ public class RollOutMCTS : MCTS
 {
     protected readonly int RollOutTimes;
     private readonly nn.Module<Tensor, Tensor> RollAI;
-    public RollOutMCTS(nn.Module<Tensor, Tensor> RollAI, int RollOutTimes = 1600) : base(null)
+    public RollOutMCTS(nn.Module<Tensor, Tensor> RollAI, int RollOutTimes = 800) : base(null)
     {
         this.RollAI = RollAI;
         this.RollOutTimes = RollOutTimes;
@@ -282,7 +282,7 @@ public class RollOutMCTS : MCTS
     {
         Random random = new Random();
         Env env1 = env.Clone();
-        for (int i = 0; i < 81; i++)
+        for (int i = 0; i < Global.SIZE * Global.SIZE; i++)
         {
             if (env1.IsEnd().Item2 != 2)
             { break; }
@@ -338,10 +338,10 @@ public class RollOutMCTS : MCTS
             }
             RoolOut(Leaf, envCopy);
         }
-        torch.Tensor ActionProbs = torch.zeros(new long[] { 9, 9 });
-        for (int i = 0; i < 9; i++)
+        torch.Tensor ActionProbs = torch.zeros(new long[] { Global.SIZE, Global.SIZE });
+        for (int i = 0; i < Global.SIZE; i++)
         {
-            for (int j = 0; j < 9; j++)
+            for (int j = 0; j < Global.SIZE; j++)
             {
                 ActionProbs[i, j] = (float)root.Children[i, j].VisitCount / (float)root.VisitCount;
             }

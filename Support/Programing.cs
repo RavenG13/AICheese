@@ -6,9 +6,10 @@ public class GameState
 {
     public Int32[] White { private set; get; } = new Int32[SIZE];
     public Int32[] Black { private set; get; } = new Int32[SIZE];
-    public const int SIZE = 9;
-    private static readonly torch.Tensor mask = torch.tensor(new int[] {1 << 8, 1 << 7, 1 << 6, 1 << 5, 1 << 4, 1 << 3, 1 << 2, 1 << 1, 1 << 0 });
-    //torch.tensor(new int[] { 1<<14,1<<13,1<<12,1<<11,1<<10,1<<9,1 << 8, 1 << 7, 1 << 6, 1 << 5, 1 << 4, 1 << 3, 1 << 2, 1 << 1, 1 << 0 });
+    public const int SIZE = Global.SIZE;
+    private static readonly torch.Tensor mask = torch.tensor(new int[] { 1 << 8, 1 << 7, 1 << 6, 1 << 5, 1 << 4, 1 << 3, 1 << 2, 1 << 1, 1 << 0 });
+    //torch.tensor(new int[] { 1 << 14, 1 << 13, 1 << 12, 1 << 11, 1 << 10, 1 << 9, 1 << 8, 1 << 7, 1 << 6, 1 << 5, 1 << 4, 1 << 3, 1 << 2, 1 << 1, 1 << 0 });
+    //torch.tensor(new int[] {1 << 8, 1 << 7, 1 << 6, 1 << 5, 1 << 4, 1 << 3, 1 << 2, 1 << 1, 1 << 0 })
     public GameState() { }
     public GameState(int[] white, int[] black) { White = white; Black = black; }
     public void Place(int player, int[] Position)
@@ -46,7 +47,7 @@ public class GameState
             {
                 if (HasPiece(0, new int[] { i, j }))
                 {
-                    if (Has5(0, new int[] { i, j })) { return (new int[] { i, j } ,0); }
+                    if (Has5(0, new int[] { i, j })) { return (new int[] { i, j }, 0); }
                 }
                 if (HasPiece(1, new int[] { i, j }))
                 {
