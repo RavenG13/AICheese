@@ -40,7 +40,6 @@ public class GameState
         int j = SIZE - Position[1] - 1;
 
         AllGame[player, i] |= (uint)1 << j;
-
     }
     public bool HasPiece(int player, int[] Position)
     {

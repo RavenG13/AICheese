@@ -3,6 +3,7 @@ using Cheese.Module;
 using Godot;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using TorchSharp;
@@ -143,7 +144,7 @@ public static class AlphaGo
     {
         int n = 0;
         Env env = new Env();
-
+        //Stopwatch sw = Stopwatch.StartNew();
         for (int i = 0; i < SIZE * SIZE; i++)
         {
             if (env.IsEnd().Item2 != 2) break;
@@ -162,10 +163,12 @@ public static class AlphaGo
 
             env = env.Step(act);
         }
-
+        //sw.Stop();
+        //Global.strings.Enqueue(sw.Elapsed.ToString());
         Global.strings.Enqueue("\n\nfinish\n");
         Global.strings.Enqueue(env.IsEnd().Item1.Join());
         Global.strings.Enqueue("\nWinner=" + env.IsEnd().Item2.ToString());
+        
         Global.Env = env.Clone();
 
         
@@ -215,7 +218,7 @@ public class DataLoader
             Tensor Inputs, Targets;
             (Inputs, Targets) = AlphaGo.RotEnvTensor(newenv);
 
-            Tensor OutPut = AlphaGo.rollOutAI.forward(Inputs.to(CUDA)).to(CPU);
+            Tensor OutPut = AlphaGo.rollOutAI.forward(Inputs);
 
             Tensor Loss1 = -torch.sum(Targets * OutPut,1).mean();
 

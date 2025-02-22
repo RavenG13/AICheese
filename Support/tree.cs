@@ -277,17 +277,14 @@ public class PureRollOutMcts : RollOutMCTS
     {
         return (torch.nn.functional.log_softmax(torch.rand(new long[] { 1, Global.SIZE * Global.SIZE }), 1), torch.zeros(1));
     }
-
-
-
 }
 
 public class RollOutMCTS : MCTS
 {
-    private readonly int _threads = 8;
+    private readonly int _threads = 16;
     protected readonly int RollOutTimes;
     private readonly nn.Module<Tensor, Tensor> RollAI;
-    public RollOutMCTS(nn.Module<Tensor, Tensor> RollAI, int RollOutTimes = 400) : base(null)
+    public RollOutMCTS(nn.Module<Tensor, Tensor> RollAI, int RollOutTimes = 100) : base(null)
     {
         this.RollAI = RollAI;
         this.RollOutTimes = RollOutTimes;
@@ -321,7 +318,7 @@ public class RollOutMCTS : MCTS
     }
     protected override (Tensor Act, Tensor LeafValue) SelfForward(Tensor all_Reshape_Input)
     {
-        Tensor tensor = RollAI.forward(all_Reshape_Input.to(CUDA)).to(CPU);
+        Tensor tensor = RollAI.forward(all_Reshape_Input);
         return (tensor, torch.zeros(1));
     }
 

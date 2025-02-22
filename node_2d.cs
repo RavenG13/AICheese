@@ -59,8 +59,8 @@ public partial class node_2d : Node2D
         //AlphaGo.alphaAI = (ResNet)AlphaGo.alphaAI.load("./ModuleSave/New.dat");
 
         AlphaGo.rollOutAI = new("test");
-        AlphaGo.rollOutAI.to(CUDA);
-        //AlphaGo.rollOutAI.load("./ModuleSave/15ResrollOutAI.dat");
+        //AlphaGo.rollOutAI.to(CUDA);
+        AlphaGo.rollOutAI.load("./ModuleSave/15ResrollOutAI.dat");
 
         //AlphaGo.alphaAI.optimizer = new(AlphaGo.alphaAI.parameters(), lr: 1E-4);
         AlphaGo.rollOutAI.adam = new(AlphaGo.rollOutAI.parameters(), lr: 1E-4);
